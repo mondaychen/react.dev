@@ -49,7 +49,7 @@ export function Page({children, toc, routeTree, meta, section}: PageProps) {
     content = <HomeContent />;
   } else {
     content = (
-      <div className="pl-0">
+      <div className="pl-0 content-wrapper">
         <div
           className={cn(
             section === 'blog' && 'mx-auto px-0 lg:px-4 max-w-5xl'

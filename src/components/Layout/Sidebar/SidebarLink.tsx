@@ -4,11 +4,11 @@
 
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
-import {useRef, useEffect} from 'react';
+import {useRef, useEffect, startTransition} from 'react';
 import * as React from 'react';
 import cn from 'classnames';
 import {IconNavArrow} from 'components/Icon/IconNavArrow';
-import Link from 'next/link';
+import {useRouter} from 'next/router';
 
 interface SidebarLinkProps {
   href: string;
@@ -22,6 +22,23 @@ interface SidebarLinkProps {
   isPending: boolean;
 }
 
+interface DocumentWithViewTransition extends Document {
+  startViewTransition: (callback: () => void) => void;
+}
+
+function navigateWithViewTransition(callback: () => void) {
+  const doc = document as DocumentWithViewTransition;
+
+  // Fallback for browsers that don't support this API:
+  if (!doc.startViewTransition) {
+    callback();
+    return;
+  }
+
+  // With a view transition
+  startTransition(() => doc.startViewTransition(() => callback()));
+}
+
 export function SidebarLink({
   href,
   selected = false,
@@ -33,6 +50,7 @@ export function SidebarLink({
   isPending,
 }: SidebarLinkProps) {
   const ref = useRef<HTMLAnchorElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     if (selected && ref && ref.current) {
@@ -45,15 +63,22 @@ export function SidebarLink({
   }, [ref, selected]);
 
   let target = '';
+  let handleClick = undefined;
   if (href.startsWith('https://')) {
     target = '_blank';
+  } else {
+    handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+      e.preventDefault();
+      navigateWithViewTransition(() => router.push(href));
+    };
   }
   return (
-    <Link
+    <a
       href={href}
       ref={ref}
       title={title}
       target={target}
+      onClick={handleClick}
       aria-current={selected ? 'page' : undefined}
       className={cn(
         'p-2 pr-2 w-full rounded-none lg:rounded-r-2xl text-left hover:bg-gray-5 dark:hover:bg-gray-80 relative flex items-center justify-between',
@@ -86,6 +111,6 @@ export function SidebarLink({
           <IconNavArrow displayDirection={isExpanded ? 'down' : 'right'} />
         </span>
       )}
-    </Link>
+    </a>
   );
 }
